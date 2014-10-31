@@ -19,8 +19,8 @@ def parse_args():
                         help="The number of intermediate files to split the infile into.")
     parser.add_argument("-records", dest="records", type=int, default=None, required=False,
                         help="The maximum number of records to put in an intermediate file.")
-    parser.add_argument("-o", dest="output", type=str, required=False,
-                        help="The absolute or relative path in which to place the output")
+    parser.add_argument("-o", dest="output", type=str, required=False, default="split",
+                        help="The basename to use for output.")
     args = parser.parse_args()
     return args
 
@@ -59,7 +59,7 @@ def process_fasta_by_splits(filename, isFastq, num_splits):
     return record_count
 
 
-def process_fasta(filename, isFastq, num_records=1000):
+def process_fasta(filename, isFastq, num_records=1000, outbasename="split"):
     """Splits a given file into a set of files each
     containing <num_records> records"""
     split_number = 0
@@ -71,7 +71,8 @@ def process_fasta(filename, isFastq, num_records=1000):
     # os.mkdir(tmp_dir)
     iden = "@" if isFastq else ">"
     original_records_count = 0
-    os.mkdir("./temp")
+    if not os.path.isdir("./temp"):
+        os.mkdir("./temp")
     with open(filename, "r") as infile:
         count = 0
         for line in infile:
@@ -80,7 +81,7 @@ def process_fasta(filename, isFastq, num_records=1000):
                 count += 1
             if count >= num_records:
                 ## + "".join(basename.split(".")[:-1])
-                cname = "temp/" + "split_" + str(split_number) + "." + extension
+                cname = "temp/" + outbasename + "_" + str(split_number) + "." + extension
                 with open(cname, "w") as outfile:
                     for record in records:
                         outfile.write(record)
@@ -105,7 +106,7 @@ def main():
         process_fasta_by_splits(filename, isFastq, args.splits)
 
     elif args.records is not None:
-        process_fasta(filename, isFastq, args.records)
+        process_fasta(filename, isFastq, args.records, args.output)
 
     else:
         raise ValueError("Please specify either -splits or -records, but not both.")
